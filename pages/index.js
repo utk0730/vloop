@@ -1,65 +1,80 @@
 import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import {useState,useEffect} from "react"
+import LeaderList from "../components/leaderLists"
+import axios from 'axios'
+import Pusher from 'pusher-js'
+
+var pusher = new Pusher('510318c8d0c6b32e86b9', {
+  cluster: 'ap2',
+  encrypted: true
+})
+const channel = pusher.subscribe('watch-leaderboard')
 
 export default function Home() {
+  const [data, setData] = useState(null)
+
+  const fetchLeaders = async () => {
+    try {
+      const _res= await axios.get('http://localhost:5000/fetch-leaders')
+      if (_res) {
+        return _res.data
+      }
+    } catch (error) {
+      console.log('Unable to fetch data',error)
+    }
+    
+  }
+
+  useEffect(async () => {
+    await fetchLeaders()
+  },[])
+
+  useEffect(() => {
+      receiveGetAllLeadersFromPusher() 
+  }, [data])
+  
+
+
+  /*  
+  Seems like having different bind methods for open channel can be a better approach 
+  */
+  
+  // function receiveAddLeaderFromPusher() {
+  //   console.log('recieving add leader change')
+  //   channel.bind('watch-add-leader', data => {
+  //     console.log('add leader watcher triggered...',data)
+     
+  //   }),
+  //   console.log('app subscription to event successful')
+  // }
+
+  // function receiveUpdateLeaderFromPusher() {
+  //   console.log('recieving update leader change')
+  //   channel.bind('watch-update-leader', data => {
+  //     console.log('update leader watcher triggered...',data)
+     
+  //   }),
+  //   console.log('app subscription to event successful')
+  // }
+
+  function receiveGetAllLeadersFromPusher() {
+    channel.bind('watch-all-leaders', data => {
+      console.log('get all leaders watcher trigger...', data)
+        const _finalData = data.sort((a, b) => b.point - a.point)
+        setData(_finalData) // setting state here is the main logic that i could come across
+      
+    })
+  }
+
+
   return (
-    <div className={styles.container}>
+    <div>
       <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
+        <title>vloop</title>
       </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
+      <main>
+        <LeaderList data={data} setData={setData}/>
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
     </div>
   )
 }
