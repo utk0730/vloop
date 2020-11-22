@@ -3,9 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "start-client": "next dev",
     "start-server": "nodemon server/server.js"
   },
   "dependencies": {
